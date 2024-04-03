@@ -18,7 +18,7 @@ manufacturer_tag = "MFG" #Manufacturer name tag
 #fname = "/home/vsuarez/SCRATCH/tinytapeout-demo.kicad_pcb"; fab_tag = 'JLC'; part_tags = ['MPN', 'MPN_ALT']
 #fname = "/home/vsuarez/SCRATCH/victor_gpu_board/KiCad_files/YuzukiNezha D1s RISC-V Linux.BAK/YuzukiNezha D1s RISC-V Linux.kicad_pcb"; part_tags = ['MPN', 'MPN_ALT'];
 #fname ="../YuzukiNezhaD1s_2024_easyedaexport/YuzukiNezha D1s - RISC-V Linux 2024.kicad_pcb"; part_tags = ['MPN', 'MPN_ALT']; fab_tag = "LCSC Part Number"
-fname = "/home/vsuarez/SCRATCH/victor_gpu_board/KiCad_files/YuzukiNezha D1s RISC-V Linux/YuzukiNezha D1s RISC-V Linux.kicad_pcb"; part_tags = ['MPN', 'MPN_ALT']; fab_tag = "LCSC Part Number"
+fname = "/home/vsuarez/SCRATCH/victor_gpu_board/KiCad_files/CPU_board/CPU_board.kicad_pcb"; part_tags = ['MPN', 'MPN_ALT']; fab_tag = "LCSC Part Number"
 
 from kicad_pcb import KicadPCB
 pcb = KicadPCB.load(fname)
@@ -100,7 +100,6 @@ def is_common_footprint(f):
 prefixes = {}
 positions = {}
 position_fixes = {
-  "C961679":	(+2, +.5, +180),	#TF-018: SD connector
   "C2988369":	(+1.25, 0, 0),		#GT-USB-7010ASV: USB 2.0 receptacle
   "C404280":	(0, 0, +180),		#MHPA1010RGBDT: Common anode RGB LED
   "C5365285":	(0, 0, -90),		#CPU D1s-eLQFP128
@@ -143,7 +142,7 @@ def resistor_value_map(value):
 # RC0201FR-07210KL for 210K 1% 0201
 # CRCW0805210KFKED for 210K 1% 0805
 # CL21B106KOQNNNE for 10uF 0805
-# CL10A106MP8NNNC for 10uF 0603
+# CL10A106MP8NNNC / CL10A106MQ8NNNC for 10uF 0603
 # CL05A104KA5NNNC for 100nF 0402
 # CC0402JRNPO9BN150 for 15p 0402
 
@@ -201,7 +200,8 @@ def find_common_part(qualified_footprint, footprint, fullvalue): #resistors, cap
         #part = f"CL10A{picofarads}MA8NRNC" #25v 20%
         #part = f"CL10A{picofarads}MQ8NNNC" #6.3v 20%
         if expten >= 6:
-          part = f"CL10A{picofarads}KO8NQNC" #16v 10%
+          #part = f"CL10A{picofarads}KO8NQNC" #16v 10%
+          part = f"CL10A{picofarads}MQ8NNNC" #6.3v 20%
         elif expten > 4:
           part = f"CL10A{picofarads}KO8NNNC" #16v 10%
         else:
