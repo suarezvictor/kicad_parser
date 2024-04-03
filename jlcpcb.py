@@ -52,13 +52,13 @@ position_columns_selection = {
  "AllPCB":	    [1,4,5,6,7],
 }
 BOM_file_headings = {
-  "JLCPCB": ["Comment", "Designator", "Footprint", "LCSC Part Number"],
+  "JLCPCB": ["Comment", "Designator", "Footprint", "LCSC Part Number", "MPN", "MFG"],
   "Hitech PCB": ["ID", "Designator", "Name", "Quantity", "Manufacturer Part Number", "Manufacturer"],
   "PCBgogo": ["Quantity", "Designator", "Description", "Value", "Footprint", "Manufacturer", "Part Number"],
   "AllPCB": ["Quantity", "Designator", "Description", "Value", "Footprint", "Manufacturer", "Part Number"],
 }
 BOM_columns_selection = {
-  "JLCPCB": [1,2,3,4],
+  "JLCPCB": [1,2,3,4,7,6],
   "Hitech PCB": [0,2,1,5,4,6],
   "PCBgogo": [5,2,1,1,3,6,4],
   "AllPCB": [5,2,1,1,3,6,4],
@@ -94,12 +94,22 @@ def footprint_equivalence(footprint):
     return '"'+parts[1], parts[-1]
   return footprint, parts[-1]
 
+def is_common_footprint(f):
+  return len(f) == 4 and f.isdigit()
+
 prefixes = {}
 positions = {}
 position_fixes = {
-  "C961679":	(+2, +.5, +180),	#TF-018: -25℃~+85℃ 1.5mm Gold plating (SD connector)
-  "C2988369":	(+1.2, 0, 0),	#GT-USB-7010ASV: USB 2.0 receptacle
-  "C404280":	(0, 0, +180),	#MHPA1010RGBDT: Common anode RGB LED
+  "C961679":	(+2, +.5, +180),	#TF-018: SD connector
+  "C2988369":	(+1.25, 0, 0),		#GT-USB-7010ASV: USB 2.0 receptacle
+  "C404280":	(0, 0, +180),		#MHPA1010RGBDT: Common anode RGB LED
+  "C5365285":	(0, 0, -90),		#CPU D1s-eLQFP128
+  "C512395":	(+0.6, 0, +90),		#PANASONIC EVQP2P02W switch
+  "C571260":	(0, 0, +90),		#W25Q32JVZPIQ WSON-8 6x5mm flash
+  "C570857":	(0, 0, -90),		#EA3036CQBR PMIC QFN-20
+  "C7429915":	(0, 0, 180),		#LED-0603_BLUE
+  "C7371898":	(0, 0, 180),		#LED-0603_PURPLE
+  "C345958":	(0, 0, 180),		#Diode MSK4010
 }
 
 def rename_reference(ref):
@@ -154,8 +164,8 @@ def find_common_part(qualified_footprint, footprint, fullvalue): #resistors, cap
     value = resistor_value_map(value)
     if value is not None:
       if tolerance == "1%":
-        #mfr, part = "YAGEO", f"RC{footprint}FR-07{value}L"
-        mfr, part = "VISHAY", f"CRCW{footprint}{value}FKED"
+        mfr, part = "YAGEO", f"RC{footprint}FR-07{value}L"
+        #mfr, part = "VISHAY", f"CRCW{footprint}{value}FKED"
       if tolerance == "":
         mfr, part = "YAGEO", f"RC{footprint}JR-07{value}L" #YAGEO manufacturer format (or DR instead of JR)
 
@@ -303,7 +313,7 @@ for a in pcb.footprint:
     elif prop == manufacturer_tag.upper():
       mfr = prop_value
     elif prop in part_tags:
-      if chosen_part is None and part_number != "":
+      if chosen_part is None and part_number != "" :
         mpn = part_number
         if fab_tag != "":
           part_number, mfr, part_desc = db_part_lookup(mpn)
@@ -315,8 +325,18 @@ for a in pcb.footprint:
       #print("\n\nTRYING", part_number, reference, "prop", prop, "fab_tag", fab_tag)
       if fab_tag != "" and prop == fab_tag.upper():
         if part_number != "":
+          #check footprint
+          if is_common_footprint(footprint):
+            sql = 'SELECT package FROM components where lcsc=? LIMIT 1';
+            cursor.execute(sql, (part_number[1:],))
+            row = cursor.fetchone()
+            if row[0] != footprint:
+              print("\033[91mERROR\033[0m: footprint mismatch for reference", reference+ ",", "it is set as", footprint, "but real footprint is", row[0])
+              part_number = None
+              errors_count += 1
+        
           chosen_part = part_number
-          break # FAB number set
+          break # FAB number set, or bad footprint
         else:
           empty_parts += [reference]
         
@@ -331,6 +351,7 @@ for a in pcb.footprint:
       #print("\n\nALT MPN", alt_mpn, "MFR", mfr)
       if fab_tag != "":
         part_number, mfr, part_desc = db_part_lookup(alt_mpn)
+        mpn = alt_mpn
         #if part_number is None:
         #  print("\n\nCannot find in DB:", alt_mpn)
       else:
@@ -364,7 +385,7 @@ for a in pcb.footprint:
         else:
           print("\033[92mINFO\033[0m: Manufacturer for part", '"'+part_number+'"', "seems to be", '"'+mfr+'"', "(consider setting", '"'+manufacturer_tag+'"', "with that)")
       
-    positions[reference] = [value, footprint, str(x), str(y), str(rot), layer, '""' if oldref == reference else oldref, part_number, '"'+part_desc+'"', mfr]
+    positions[reference] = [value, footprint, str(x), str(y), str(rot), layer, '""' if oldref == reference else oldref, part_number, '"'+part_desc+'"', '"'+mfr+'"' if mfr is not None else '""', '"'+mpn+'"' if mpn is not None else '""']
     #print("\033[94mDEBUG\033[0m: Adding", reference, part_number, value, footprint)
 
   elif not dnp:
@@ -394,12 +415,12 @@ with open('POS.csv', 'w') as f:
    print(",".join(postion_file_headings[fab_format]), file=f)
    ID = 1
    for reference, pos in positions.items():
-     columns = [str(id)] + [reference] + pos
+     columns = [str(ID)] + [reference] + pos
      print(",".join([columns[i] for i in col_sel]), file=f)
      part_number = pos[7]
      #print("part_number", part_number)
      ref_list = BOM[part_number][0] + [reference] if part_number in BOM else [reference]
-     BOM[part_number] = (ref_list, pos[0], pos[1], pos[9]) #Reference, part, footprint, mfr
+     BOM[part_number] = (ref_list, pos[0], pos[1], pos[9], pos[10]) #Reference, part, footprint, mfr, mpn
      ID += 1
 
 with open('BOM.csv', 'w') as f:
@@ -407,10 +428,10 @@ with open('BOM.csv', 'w') as f:
    print(",".join(BOM_file_headings[fab_format]), file=f)
    ID = 1
    for part_number, d in BOM.items():
-     ref_list, value, footprint, mfr = d
+     ref_list, value, footprint, mfr, mpn = d
      qty = str(len(ref_list))
      ref_list = '"' + ",".join(ref_list) + '"'
-     columns = [str(ID), value, ref_list, footprint, part_number, qty, mfr]
+     columns = [str(ID), value, ref_list, footprint, part_number, qty, mfr, mpn]
      print(",".join([columns[i] for i in col_sel]), file=f)
      ID += 1
 

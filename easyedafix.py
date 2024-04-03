@@ -4,7 +4,7 @@
 schematics_file = "/home/vsuarez/SCRATCH/victor_gpu_board/KiCad_files/YuzukiNezha D1s RISC-V Linux/YuzukiNezha D1s RISC-V Linux.kicad_sch"
 schematics_file_out = schematics_file + ".out"
 
-BOM_file = "Yuzuki.csv"
+BOM_file = "Yuzuki-fix.csv"
 designator_tag = "Designator"
 footprint_tag = "Footprint"
 overwrite_props = True
@@ -18,6 +18,7 @@ footprints = {}
 footprints_direct_db = {
  "WSON-8_L8.0-W6.10-P1.27-BL-EP": "Package_SON:WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm",
  "WQFN-20_L3.0-W3.0-P0.40-BL-EP1.7": "Package_DFN_QFN:WQFN-20-1EP_3x3mm_P0.4mm_EP1.7x1.7mm",
+ "IND-SMD_L2.0-W1.6": "Inductor_SMD:L_Cenker_CKCS201610"
 }
 
 def footprint_equivalence(designator, v):
