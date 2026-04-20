@@ -146,6 +146,8 @@ position_fixes = {
   "C2906032": (0, 0, 90), #2P female 2mm pitch
   "C165948": (0, -1.25, 0), #TYPE-C-31-M-12 USB female connector
   #"C15999": (0, 0, 180), #USBLC6-2P6 ESD surge protector
+  "C398366": (0, 0, 180), #TLV62569APDRLR SOT-563 DC-DC
+  "C190862": (0, 0, 180), #W25Q128JVPIQ 128mbit flash WSON-8
 }
 
 def rotate2d(x, y, angle):
@@ -503,7 +505,7 @@ for a in pcb.footprint:
           warnings_count += 1
 
     assert(reference not in positions)
-    positions[reference] = [value, footprint, str(x), str(y), str(rot), layer, '""' if oldref == reference else oldref, part_number, '"'+part_desc+'"', '"'+mfr+'"' if mfr is not None else '""', '"'+mpn+'"' if mpn is not None else '""']
+    positions[reference] = [value, footprint, str(x), str(-y), str(rot), layer, '""' if oldref == reference else oldref, part_number, '"'+part_desc+'"', '"'+mfr+'"' if mfr is not None else '""', '"'+mpn+'"' if mpn is not None else '""']
     placed_pad_count += len(a.pad)
     #print("\033[94mDEBUG\033[0m: Adding", reference, part_number, value, footprint)
 
