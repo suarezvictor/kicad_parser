@@ -10,7 +10,7 @@
 
 #
 part_tags = [] #Manufacturer part number tags
-fab_tag="" #only set for JLCPCB or others that has a component database
+fab_tag=[] #only set for JLCPCB or others that has a component database
 manufacturer_tag = "MFG" #Manufacturer name tag
 
 import sys
@@ -22,7 +22,7 @@ if __name__ == "__main__":
       exit(1)
 
 fname = sys.argv[1]
-part_tags = ['MPN', 'MPN_ALT']; fab_tag = "LCSC Part Number"
+part_tags = ['MPN', 'MPN_ALT']; fab_tag = ["LCSC Part Number", "LCSC", "JLC"]
 
 from kicad_pcb import KicadPCB
 pcb = KicadPCB.load(fname)
@@ -30,7 +30,7 @@ pcb = KicadPCB.load(fname)
 fab_format = "JLCPCB"
 #fab_format = "Hitech PCB"
 #fab_format = "PCBgogo"
-#fab_format = "AllPCB"; fab_tag=""
+#fab_format = "AllPCB";
 
 #Hitech PĈB
 #BOM format: ID, Designator, Name, Quantity, Manufacturer Part Number, Manufacturer
@@ -410,7 +410,7 @@ for a in pcb.footprint:
     elif prop in part_tags and not (is_common_part(qualified_footprint) and prop == "VALUE"):
       if chosen_part is None and part_number != "":
         mpn = part_number
-        if fab_tag != "":
+        if fab_tag != []:
           part_number, mfr, part_desc = db_part_lookup(mpn)
         #if part_number is not None:
         #  break #comment to give priority to fab_tag
@@ -418,7 +418,7 @@ for a in pcb.footprint:
           chosen_part = part_number #may be overriden by FAB tag
     elif prop not in ["REFERENCE"]:
       #print("\n\nTRYING", part_number, reference, "prop", prop, "fab_tag", fab_tag)
-      if fab_tag != "" and prop == fab_tag.upper():
+      if fab_tag != [] and prop in [x.upper() for x in fab_tag]:
         if part_number != "":
           #check footprint
           if is_common_footprint(footprint):
@@ -450,7 +450,7 @@ for a in pcb.footprint:
     (alt_mpn, mfr), common_hit = find_common_part(qualified_footprint, footprint, value[1:-1])
     if alt_mpn is not None:
       #print("\n\nALT MPN", alt_mpn, "MFR", mfr)
-      if fab_tag != "":
+      if fab_tag != []:
         part_number, mfr, part_desc = db_part_lookup(alt_mpn)
         mpn = alt_mpn
         #if part_number is None:
@@ -474,7 +474,7 @@ for a in pcb.footprint:
       x += dx
       y += dy
 
-    if mfr is None and fab_tag=="":
+    if mfr is None and fab_tag==[]:
       if part_number in part_manufacturers:
         mfr = part_manufacturers[part_number]
       else:
@@ -499,7 +499,7 @@ for a in pcb.footprint:
       print("\033[93mWARNING\033[0m: excluding reference", oldref, "at", coord+":", 'no Footprint attribute set (or equal to Value)', )
       warnings_count += 1
     else:
-      tags = " or ".join(['"'+tag+'"' for tag in (part_tags+[fab_tag] if fab_tag != "" else part_tags)])
+      tags = " or ".join(['"'+tag+'"' for tag in (part_tags+fab_tag if fab_tag != [] else part_tags)])
       print("\033[91mERROR\033[0m: Missing", tags, "attribute(s) for", '"'+oldref+'"', "value", value, "at", a.at[:2], "" if mpn is None else "(MPN:"+mpn+")", "footprint", qualified_footprint)
       if mpn is not None:
         similar_mpns = find_similar_parts(mpn)
@@ -526,7 +526,8 @@ if len(renamed_refs):
 
 BOM = {}
 
-base_name = os.path.splitext( os.path.abspath(fname))[0]
+#base_name = os.path.splitext( os.path.abspath(fname))[0]
+base_name = os.path.splitext(fname)[0]
 pos_name = base_name + "_pos.csv"
 bom_name = base_name + "_bom.csv"
 
@@ -579,7 +580,7 @@ for mpn, part_number in mpn_database.items():
 
 
 print("\033[92mINFO\033[0m: Pad count", total_pad_count, "("+str(placed_pad_count)+" placed)")
-print("BOM and POS output fles: ", bom_name, pos_name)
+print("BOM and POS output fles:\n", bom_name, "\n", pos_name)
 print("\nResults:", errors_count, "errors,", warnings_count, "warnings")
 exit(errors_count > 0)
 

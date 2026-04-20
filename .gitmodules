@@ -1,3 +1,6 @@
 [submodule "sexp_parser"]
 	path = sexp_parser
 	url = https://github.com/realthunder/sexp_parser.git
+[submodule "demo/tt-demo-pcb"]
+	path = demo/tt-demo-pcb
+	url = https://github.com/TinyTapeout/tt-demo-pcb.git
